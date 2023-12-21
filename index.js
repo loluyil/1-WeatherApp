@@ -6,7 +6,6 @@
     4. Give error prompt for invalid location
 
  */
-
 /*
 
     Edits:
@@ -26,6 +25,10 @@ const weatherAppConfig = {
         mist: 'images/mist.png',
         rain: 'images/rain.png',
         snow: 'images/snow.png',
+        clearNight: 'images/clear-night.png',
+        cloudNight: 'images/cloud-night.png',
+        weatherBg: 'images/weather-background.jpg',
+        weatherBgNight: 'images/weather-background-night.png'
     },
     elements: {
         temperature: document.querySelector('.weather-box .temperature'),
@@ -44,13 +47,35 @@ const weatherAppLayout = {
     error: document.querySelector('.not-found-error'),
     weatherBox: document.querySelector('.weather-box'),
     weatherDetails: document.querySelector('.weather-details'),
+    background: document.querySelector('.background-image img')
 
+}
+
+const clock = {
+    now: new Date(),
+    //Hours starts from 7 to 18 for day/night cycle
+    daytime: [
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18
+    ],
+    updateTime: () => {
+        clock.now = new Date();
+    },
 }
 
 const search = document.querySelector('.search-box button');
 const searchBox = document.querySelector('.search-box input');
 const image = document.querySelector('.weather-box img');
-
 
 const clearInput = () => {
     searchBox.value = '';
@@ -72,13 +97,44 @@ const updateLayout = () => {
     weatherAppLayout.container.style.height = '680px';
 }
 
+const background = () => {
+    // Background will be day if it's 7 AM - 7 PM and night at 7 PM - 7 AM
+    if (clock.now.getHours() >= 7 && clock.now.getHours() < 19) {
+        weatherAppLayout.background.src = `${weatherAppConfig.images.weatherBg}`;
+    } else {
+        weatherAppLayout.background.src = `${weatherAppConfig.images.weatherBgNight}`;
+    }
+};
+
+//Initial call for background
+background();
+
+//Updates the background and time every second
+const updateClockInterval = setInterval(() => {
+    
+    //Shows time as 00:00 AM/PM
+    const time =  clock.now.toLocaleTimeString('en-US', { 
+        weekday: 'long', 
+        hour: '2-digit', 
+        minute: '2-digit', 
+        hour12: true 
+    });
+    //Changes the shown time live
+    weatherAppConfig.elements.time.innerHTML = `${time}`;
+    clock.updateTime();
+    //Changes background live
+    background();
+
+  }, 1000);
+  
+
 const performSearch = () => {
 
     const city = document.querySelector('.search-box input').value;
-
+    
     if(city === '')
         return;
-
+    //Fetches weather API from OpenWeather
     fetch(`https://api.openweathermap.org/data/2.5/weather?q=${city}&units=metric&appid=${weatherAppConfig.APIKey}`)
         .then(response => {
             if (!response.ok) {
@@ -91,19 +147,38 @@ const performSearch = () => {
                 displayError();
                 return;
             }
-
+        
+        //Removes error display when there is no error
         weatherAppLayout.error.style.display = 'none';
         weatherAppLayout.error.classList.remove('fadeIn');
 
-        const now = new Date();
-        const time =  now.toLocaleTimeString('en-US', { weekday: 'long', hour: '2-digit', minute: '2-digit', hour12: true });
+        //Grabs time as 00:00 AM/PM
+        const time =  clock.now.toLocaleTimeString('en-US', { 
+            weekday: 'long', 
+            hour: '2-digit', 
+            minute: '2-digit', 
+            hour12: true 
+        });
 
+        //Changes images based on weather
         switch(json.weather[0].main) {
             case 'Clear':
-                image.src = `${weatherAppConfig.images.clear}`;
+                if (clock.now.getHours() >= 7 && clock.now.getHours() < 19) {
+                    console.log('Clear-Day');
+                    image.src = `${weatherAppConfig.images.clear}`;
+                } else {
+                    console.log('Clear-Night');
+                    image.src = `${weatherAppConfig.images.clearNight}`;
+                }
                 break;
             case 'Clouds':
-                image.src = `${weatherAppConfig.images.cloud}`;
+                if (clock.now.getHours() >= 7 && clock.now.getHours() < 19) {
+                    console.log('Cloud-Day');
+                    image.src = `${weatherAppConfig.images.cloud}`;
+                } else {
+                    console.log('Cloud-Night');
+                    image.src = `${weatherAppConfig.images.cloudNight}`;
+                }
                 break;
             case 'Haze':
                 image.src = `${weatherAppConfig.images.mist}`;
@@ -119,9 +194,9 @@ const performSearch = () => {
                 break;       
         }
 
+        //Sets weather data
         weatherAppConfig.elements.city.innerHTML = `${json.name}`;
-        weatherAppConfig.elements.time.innerHTML = `${time}`;
-        weatherAppConfig.elements.temperature.innerHTML = `${parseInt(json.main.temp)}<span>°C</span>`;
+        weatherAppConfig.elements.temperature.innerHTML = `${parseInt(json.main.temp)}<span>°C</span`;
         weatherAppConfig.elements.description.innerHTML = `${json.weather[0].description}`;
         weatherAppConfig.elements.humidity.innerHTML = `${json.main.humidity}%`;
         weatherAppConfig.elements.wind.innerHTML = `${parseInt(json.wind.speed)}Km/h`;
@@ -133,8 +208,9 @@ const performSearch = () => {
         // Handle the error (e.g., display a user-friendly message)
         displayError();
     });
-}
+} 
 
+//Performs functions when action is done
 search.addEventListener('click', performSearch);
 searchBox.addEventListener('keydown', (event) => {
 
@@ -143,4 +219,9 @@ searchBox.addEventListener('keydown', (event) => {
         clearInput();
     }
 
+});
+
+//Clears interval when window is closed
+window.addEventListener('beforeunload', () => {
+    clearInterval(updateClockInterval);
 });

@@ -11,12 +11,15 @@
     <title>Weather App</title>
 </head>
 <body>  
-
+    <div class="background-image">
+        <img src="images/weather-background-night.png">
+    </div>
     <div class="container"> 
         <div class="search-box">    
             <i class="fa-solid fa-location-dot"></i>
             <input type="text" class="location-input" placeholder="Enter your location">
             <button class="fa-solid fa-magnifying-glass"></button>
+            <database class="cities"></database>
         </div>
 
         <div class="not-found-error">
@@ -26,10 +29,9 @@
 
         <div class="date-information-box">
             <div class="text">
-                <p class="city-name">Christchurch</p>
-                <p class="current-time">sdas</p>
+                <p class="city-name"></p>
+                <p class="current-time"></p>
             </div>
-
         </div>
 
         <div class="weather-box">
